@@ -1,4 +1,4 @@
-module github.com/dhf0820/authorize.git
+module github.com/dhf0820/authorize
 
 go 1.20
 
