@@ -1,16 +1,34 @@
 package authorize
 
 import (
-	"errors"
+	//"errors"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/dhf0820/VsMongo"
 	jw_token "github.com/dhf0820/jwToken"
+	log "github.com/dhf0820/vslog"
+	"os"
 	"testing"
-	//"github.com/davecgh/go-spew/spew"
-	//"github.com/davecgh/go-spew/spew"
 	//"github.com/joho/godotenv"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
+
+func TestCreateSessionForUser(t *testing.T) {
+	Convey("CreateSessionForUser", t, func() {
+		jwt, payload, err := jw_token.CreateTestJWToken("30s")
+		So(err, ShouldBeNil)
+		So(jwt, ShouldNotBeNil)
+		So(payload, ShouldNotBeNil)
+		as, err := CreateSessionForUser(jwt)
+		So(err, ShouldBeNil)
+		So(as, ShouldNotBeNil)
+		payloadNew, err := VerifyToken(as.JWToken)
+		So(err, ShouldBeNil)
+		So(payloadNew, ShouldNotBeNil)
+		log.Info("payloadNew: " + spew.Sdump(payloadNew))
+	})
+}
 
 // func TestDeleteAuthSession(t *testing.T) {
 // 	as := setupTest("")
@@ -46,15 +64,47 @@ import (
 // }
 
 func TestCreateSession(t *testing.T) {
-	Convey("Delete AuthSession", t, func() {
+	Convey("Create AuthSession", t, func() {
+		os.Setenv("SESSION_LENGTH", "60")
+		os.Setenv("CORE_DB", "mongodb+srv://dhfadmin:Sacj0nhati@cluster1.24b12.mongodb.net/test?retryWrites=true&w=majority")
+		os.Setenv("COMPANY", "test")
+
+		vsMongo := VsMongo.OpenDB("")
+		So(vsMongo, ShouldNotBeNil)
 		as, err := setUpTest()
 		So(err, ShouldBeNil)
-		So(as.ID, ShouldNotEqual, primitive.NilObjectID)
+		So(as.ID, ShouldEqual, primitive.NilObjectID)
+		payload, err := VerifyToken(as.JWToken)
+		So(err, ShouldBeNil)
+		So(payload, ShouldNotBeNil)
+		log.Info("payload: " + spew.Sdump(payload))
+		err = as.Delete()
+		if err == nil {
+			log.Info("Deleted existing test AuthSession for UseId " + as.UserID.Hex())
+		}
 		err = as.Create()
 		So(err, ShouldBeNil)
 		s, err := ValidateAuth(string(as.ID.Hex()))
 		So(err, ShouldBeNil)
 		So(s, ShouldNotBeNil)
+		log.Info("Success session: " + spew.Sdump(s))
+	})
+	log.Info("TestCreateSession complete")
+}
+
+func TestValidateSessionForUserId(t *testing.T) {
+	Convey("ValidateSessionForuserId", t, func() {
+		os.Setenv("SESSION_LENGTH", "60")
+		os.Setenv("CORE_DB", "mongodb+srv://dhfadmin:Sacj0nhati@cluster1.24b12.mongodb.net/test?retryWrites=true&w=majority")
+		os.Setenv("COMPANY", "test")
+		vsMongo := VsMongo.OpenDB("")
+		So(vsMongo, ShouldNotBeNil)
+		userId, err := primitive.ObjectIDFromHex("62f18efcba5395278cd530d5")
+		So(err, ShouldBeNil)
+		So(userId, ShouldNotEqual, primitive.NilObjectID)
+		as, err := ValidateSessionForUserID(userId)
+		So(err, ShouldBeNil)
+		So(as, ShouldNotBeNil)
 	})
 }
 
@@ -64,13 +114,15 @@ func setUpTest() (*AuthSession, error) {
 	if err != nil {
 		return nil, err
 	}
-	payload.ID.ID()
+	log.Info("jwt: " + jwt)
+	log.Info("payload: " + spew.Sdump(payload))
+	//as.ID = primitive.NewObjectID()
 	as.FullName = payload.FullName
 	as.JWToken = jwt
 	as.UserName = payload.Username
 	as.UserID, err = primitive.ObjectIDFromHex(payload.UserId)
 	if err != nil {
-		return nil, errors.New(VLogErr(fmt.Sprintf("Invalid UserId: [%s] - err: %s", payload.UserId, err.Error())))
+		return nil, log.Errorf(fmt.Sprintf("Invalid UserId: [%s] - err: %s", payload.UserId, err.Error()))
 	}
 	return &as, nil
 

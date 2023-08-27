@@ -1,22 +1,33 @@
-package token
+package authorize
 
 import (
 	//"fmt"
-	//log "github.com/sirupsen/logrus"
 	jw_token "github.com/dhf0820/jwToken"
-	//"os"
+	log "github.com/dhf0820/vslog"
+	"os"
 	"time"
 )
 
-func CreateToken(ip, userName string, duration time.Duration, userId, fullName, role, sessionId string) (string, error) {
+func CreateToken(ip string, userName string, duration time.Duration, userId, fullName, role string) (string, *jw_token.Payload, error) {
 	var err error
 	jwtKey := "I am so blessed Debbie loves me!"
 	//refreshKey := os.Getenv("REFRESH_SECRET")
 	maker, err := jw_token.NewJWTMaker(jwtKey)
 	if err != nil {
-		log.Printf("NewJWToken err: %s\n", err.Error())
-		return "", err
+		log.Error("NewJWToken failed: " + err.Error())
+		return "", nil, err
 	}
-	token, _, err := maker.CreateToken(ip, userName, duration, userId, fullName, role, sessionId)
-	return token, err
+	token, payload, err := maker.CreateToken(ip, userName, duration, userId, fullName, role)
+	return token, payload, err
+}
+
+func VerifyToken(token string) (*jw_token.Payload, error) {
+	jwtKey := os.Getenv("ACCESS_SECRET")
+	maker, err := jw_token.NewJWTMaker(jwtKey)
+	if err != nil {
+		log.Error("NewJWToken failed: " + err.Error())
+		return nil, err
+	}
+	payload, err := maker.VerifyToken(token)
+	return payload, err
 }

@@ -14,8 +14,9 @@ import (
 	//"github.com/dgrijalva/jwt-go"
 	//uuid "github.com/aidarkhanov/nanoid/v2"
 	//"github.com/davecgh/go-spew/spew"
-	//log "github.com/sirupsen/logrus"
-	"github.com/dhf0820/uc_core/common"
+	//"github.com/dhf0820/uc_core/common"
+	jw_token "github.com/dhf0820/jwToken"
+	log "github.com/dhf0820/vslog"
 	//"github.com/google/uuid"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/dhf0820/VsMongo"
@@ -43,15 +44,16 @@ type PatientSummary struct {
 // 	Token 			string				`json:"token" bson:"token"`
 // }
 
-// SessionConnection is a remote EMR The User may connect to
+// SessionConnection is a remote EMR The User has connected to in this AuthSession
 // Would need to include the Facility/System Name
 type SessionConnection struct {
 	UserId     primitive.ObjectID `json:"userId" bson:"userId"`
 	FacilityId primitive.ObjectID `json:"facilityId" bson:"facilityId"`
 	SystemId   primitive.ObjectID `json:"systemId" bson:"systemId"`
+	UserName   string             `json:"userName" bson:"userName"`
 	//Last X patients the user has selected
 	PatientHistory []PatientSummary `json:"patientHistory" bson:"patientHistory"`
-	Token          string           `json:"token" bson:"token"` //for this connection to Remote
+	Token          string           `json:"token" bson:"token"` //for this connection to Remote EMR from the connector
 
 }
 
@@ -60,13 +62,13 @@ type AuthSession struct {
 	ID             primitive.ObjectID `json:"_id" bson:"_id,omitempty"`
 	Status         int                `json:"status" bson:"status"`
 	UserID         primitive.ObjectID `json:"user_id" bson:"user_id"`
-	UserName       string             `json:"user_name" bson:"user_name"`
+	UserName       string             `json:"userName" bson:"user_name"`
 	FullName       string             `json:"fullName" bson:"fullName"`
 	JWToken        string             `json:"jwToken" bson:"jwToken"`
-	CurrentPatId   string             `json:"current_pat_id" bson:"current_pat_id"` //Keeps the current patient. If changes, start a new session, Delete old
+	CurrentPatId   string             `json:"currentPatId" bson:"current_pat_id"` //Keeps the current patient. If changes, start a new session, Delete old
 	ExpiresAt      *time.Time         `json:"expiresAt" bson:"expiresAt"`
 	CreatedAt      *time.Time         `json:"createdAt" bson:"createdAt"`
-	LastAccessedAt *time.Time         `json:"latAccessedAt" bson:"lastAccessedAt"`
+	LastAccessedAt *time.Time         `json:"lastAccessedAt" bson:"lastAccessedAt"`
 	// May not want to include this in what gets returned to the user on login
 	Connections []SessionConnection `json:"connections" bson:"connections"`
 }
@@ -81,25 +83,29 @@ type AuthSession struct {
 func ValidateSession(id string) (*AuthSession, error) {
 	id = strings.Trim(id, " ")
 	if id == "" {
-		VLog("ERROR", "session is blank")
+		log.Error("session is blank")
 		return nil, fmt.Errorf("401|Unauthorized")
 	}
-	VLog("INFO", "Validate Id: "+id)
+	log.Error("Validate Id: " + id)
 	ID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
-		return nil, errors.New(VLogErr("ID " + id + " FromHex Error: " + err.Error()))
+		return nil, errors.New(log.ErrMsg("ID " + id + " FromHex Error: " + err.Error()))
 	}
 	// Session ID is valid formay, Retrieve it, Update it and return it.
 	filter := bson.M{"_id": ID}
-	collection, _ := GetCollection("Sessions")
+	collection, _ := VsMongo.GetCollection("AuthSession")
 	as := &AuthSession{}
 	err = collection.FindOne(context.TODO(), filter).Decode(as)
 	if err != nil {
-		VLog("ERROR", fmt.Sprintf("Session for ID [%s] returned ERROR: %s", id, err.Error()))
-		return nil, errors.New(VLogErr("AuthSession does not exist"))
+		log.Error(fmt.Sprintf("Session for ID [%s] returned ERROR: %s", id, err.Error()))
+		return nil, log.Errorf("AuthSession does not exist")
 	}
 	//Sessions is valid update it including new token
-	err = as.UpdateSession()
+	payload, err := VerifyToken(as.JWToken)
+	if err != nil {
+		return nil, log.Errorf("VerifyToken: " + err.Error())
+	}
+	err = as.UpdateSession(payload)
 	if err != nil {
 		return nil, err
 	}
@@ -111,12 +117,12 @@ func (as *AuthSession) UpdateTimes() error {
 
 	//log.Infof("ValidateSession:70 - Time now: %d  expireTime: %d", tnow, as.ExpireAt)
 	if tnow.Unix() > as.ExpiresAt.Unix() {
-		return errors.New(VLogErr("Session Expired"))
+		return log.Errorf("Session Expired")
 	}
 	sessionLengthStr := os.Getenv("SESSION_LENGTH")
 	sessionLength, err := strconv.Atoi(sessionLengthStr)
 	if err != nil {
-		return errors.New(VLogErr(fmt.Sprintf("Can not convert SESSION_LENGTH: [%s] to integer minutes", sessionLengthStr)))
+		return log.Errorf(fmt.Sprintf("Can not convert SESSION_LENGTH: [%s] to integer minutes", sessionLengthStr))
 	}
 	expires := tnow.Add(time.Duration(sessionLength) * time.Minute)
 	as.ExpiresAt = &expires
@@ -133,7 +139,7 @@ func (as *AuthSession) UpdateTimes() error {
 // 	filter := bson.M{"_id": as.ID}
 
 // 	update := bson.M{"$set": bson.M{"session_id": as.SessionID}}
-// 	collection, _ := storage.GetCollection("sessions")
+// 	collection, _ := storage.GetCollection("AuthSession")
 // 	_, err = collection.UpdateOne(context.TODO(), filter, update)
 // 	if err != nil {
 // 		msg := fmt.Sprintf("Update SessionID failed: %s", err.Error)
@@ -143,9 +149,19 @@ func (as *AuthSession) UpdateTimes() error {
 
 // }
 
+func (as *AuthSession) Delete() error {
+	filter := bson.M{"user_id": as.UserID}
+	collection, _ := VsMongo.GetCollection("AuthSession")
+	_, err := collection.DeleteOne(context.Background(), filter)
+	if err != nil {
+		return log.Errorf("DeleteOne failed: " + err.Error())
+	}
+	return nil
+}
+
 func (as *AuthSession) Create() error { // SessionID is provided
 	if !as.ID.IsZero() {
-		return errors.New(VLogErr("AuthSession with ID: " + as.ID.Hex() + " exists"))
+		return log.Errorf("AuthSession with ID: " + as.ID.Hex() + " exists")
 	}
 
 	// id, err := uuid.New()
@@ -170,7 +186,7 @@ func (as *AuthSession) Create() error { // SessionID is provided
 	sessionLengthStr := os.Getenv("SESSION_LENGTH")
 	sessionLength, err := strconv.Atoi(sessionLengthStr)
 	if err != nil {
-		return errors.New(VLogErr("Can not convert SESSION_LENGTH: [" + sessionLengthStr + "] to integer minutes"))
+		return log.Errorf("Can not convert SESSION_LENGTH: [" + sessionLengthStr + "] to integer minutes")
 	}
 	//as.UserID = userId
 	now := time.Now()
@@ -183,10 +199,10 @@ func (as *AuthSession) Create() error { // SessionID is provided
 	//log.Infof("Creating Session: %s\n", spew.Sdump(as))
 	err = as.Insert()
 	if err != nil {
-		return errors.New(VLogErr("Insert Failed err: " + err.Error()))
+		return log.Errorf("Insert Failed err: " + err.Error())
 	}
 	// filter := bson.D{{"token", as.Token}}
-	// collection, _ := storage.GetCollection("sessions")
+	// collection, _ := storage.GetCollection("AuthSession")
 
 	// err = collection.FindOne(context.TODO(), filter).Decode(&as)
 	// if err != nil {
@@ -198,7 +214,7 @@ func (as *AuthSession) Create() error { // SessionID is provided
 
 // func (as *AuthSession) Delete() error {
 // 	//startTime := time.Now()
-// 	collection, _ := GetCollection("sessions")
+// 	collection, _ := GetCollection("AuthSession")
 // 	filter := bson.D{{"sessionid", as.SessionID}}
 // 	//log.Debugf("    bson filter delete: %v\n", filter)
 // 	_, err := collection.DeleteMany(context.Background(), filter)
@@ -210,66 +226,80 @@ func (as *AuthSession) Create() error { // SessionID is provided
 // 	return nil
 // }
 
-func CreateSessionForUser(user *User) (*AuthSession, error) {
-	userID := user.ID
+func CreateSessionForUser(jwToken string) (*AuthSession, error) {
+	payload, err := VerifyToken(jwToken)
+	if err != nil {
+		return nil, log.Errorf("VerifyToken: " + err.Error())
+	}
+	log.Info("payload: " + spew.Sdump(payload))
+	filter := bson.M{"UserId": payload.UserId}
 
-	filter := bson.M{"user_id": userID}
-	collection, _ := GetCollection("sessions")
+	collection, err := VsMongo.GetCollection("AuthSession")
+	if err != nil {
+		return nil, log.Errorf("GetCollection(AuthSession): " + err.Error())
+	}
 	as := &AuthSession{}
-	err := collection.FindOne(context.TODO(), filter).Decode(as) // See if the user already has a session
-	if err == nil {                                              // The user has a session, keep using it
-		as.UpdateSession() // Extend the current session
+	err = collection.FindOne(context.TODO(), filter).Decode(as) // See if the user already has a session
+	if err == nil {                                             // The user has a session, keep using it
+		as.UpdateSession(payload) // Extend the current session
 		return as, nil
 	}
 	// Create a new Session
-	as.UserID = userID
-	as.UserName = user.UserName
+
+	as.UserName = payload.Username
+	as.FullName = payload.FullName
 	err = as.Insert()
 	if err != nil {
 		msg := fmt.Sprintf("insert Session error: %s", err.Error())
 
-		return nil, errors.New(VLogErr(msg))
+		return nil, log.Errorf(msg)
 	}
 	return as, nil
 }
 
-func GetSessionForUserID(userID primitive.ObjectID) (*common.AuthSession, error) {
+func ValidateSessionForUserID(userID primitive.ObjectID) (*AuthSession, error) {
 	filter := bson.M{"user_id": userID}
-	collection, _ := GetCollection("sessions")
-	as := &common.AuthSession{}
+	collection, _ := VsMongo.GetCollection("AuthSession")
+	as := &AuthSession{}
 	err := collection.FindOne(context.TODO(), filter).Decode(as) // See if the user already has a session
 	return as, err
 }
 
-func ValidateAuth(id string) (*AuthSession, error) {
+func ValidateAuth(authId string) (*AuthSession, error) {
 	//TODO: Actually validate the session as a valid JWT. Right now just using
-	VLog("INFO", fmt.Sprintf("Token: [%s]", id))
-	if strings.Trim(id, " ") == "" {
-		return nil, errors.New(VLogErr("401|Unauthorized Token is Blank"))
+	log.Info(fmt.Sprintf("ID: [%s]", authId))
+	if strings.Trim(authId, " ") == "" {
+		return nil, log.Errorf("401|Unauthorized ID is Blank")
 	}
-	oId, err := primitive.ObjectIDFromHex(id)
+	oId, err := primitive.ObjectIDFromHex(authId)
 	if err != nil {
-		msg := "ValidateAuth:199 -- Invalid SessionID"
-		return nil, errors.New(VLogErr(msg))
+		return nil, log.Errorf("Invalid SessionID: " + err.Error())
 	}
 	filter := bson.M{"_id": oId}
 
-	collection, _ := GetCollection("sessions")
+	collection, _ := VsMongo.GetCollection("AuthSession")
 	var as AuthSession
 	err = collection.FindOne(context.TODO(), filter).Decode(&as)
 	if err != nil {
-		VLog("ERROR", fmt.Sprintf("Find Session for token %s returned ERROR: %s", id, err.Error()))
+		log.Error(fmt.Sprintf("Find Session for ID: %s returned ERROR: %s", authId, err.Error()))
 		//fmt.Printf("as: %s\n", spew.Sdump(as))
-		return nil, fmt.Errorf("not Authorized")
+
+		return nil, log.Errorf("not Authorized")
 	}
 	tnow := time.Now().UTC().Unix()
 	if tnow > as.ExpiresAt.Unix() {
-		return nil, errors.New("notLoggedIn")
+		//TODO: Should we delete the current Session since timed out?
+		return nil, log.Errorf("notLoggedIn")
+	}
+	payload, err := VerifyToken(as.JWToken)
+	if err != nil {
+		//TODO: Should we delete the current Session since JWToken is invalid?
+		return nil, log.Errorf("VerifyToken: " + err.Error())
 	}
 	//log.Debugf("auth_session210 -- Validate Found Session: %s", spew.Sdump(as))
 	//log.Debugf("Found Session: %s update ExpireAt: %s  \n\n", as.ID.String(), as.ExpireAt.String())
 	//spew.Dump(as)
-	as.UpdateSession()
+	as.UpdateSession(payload)
 	return &as, nil
 }
 
@@ -277,17 +307,17 @@ func (as *AuthSession) Insert() error {
 	as.ExpiresAt = as.CalculateExpireTime()
 	tn := time.Now().UTC()
 	as.LastAccessedAt = &tn
-	collection, _ := GetCollection("Sessions")
+	collection, _ := VsMongo.GetCollection("AuthSession")
 	insertResult, err := collection.InsertOne(context.TODO(), as)
 	if err != nil {
-		return errors.New(VLogErr("InsertOne error: " + err.Error()))
+		return log.Errorf("InsertOne error: " + err.Error())
 	}
 	as.ID = insertResult.InsertedID.(primitive.ObjectID)
-	VLog("INFO", ("New ID: %s" + as.ID.Hex()))
+	log.Error("New ID: " + as.ID.Hex())
 	return nil
 }
 
-func (as *AuthSession) UpdateSession() error {
+func (as *AuthSession) UpdateSession(payload *jw_token.Payload) error {
 	saveAs := *as
 	filter := bson.M{"_id": as.ID}
 	as.ExpiresAt = as.CalculateExpireTime()
@@ -295,9 +325,9 @@ func (as *AuthSession) UpdateSession() error {
 	as.LastAccessedAt = &tn
 	update := bson.M{"$set": bson.M{"expire_at": as.ExpiresAt, "accessed_at": as.LastAccessedAt}}
 
-	collection, err := GetCollection("Sessions")
+	collection, err := VsMongo.GetCollection("AuthSession")
 	updResults, err := collection.UpdateOne(context.TODO(), filter, update)
-	VLog("INFO", "updResult: "+spew.Sdump(updResults))
+	log.Info("updResult: " + spew.Sdump(updResults))
 	if err != nil {
 		*as = saveAs
 		return errors.New("UpdateSession failed: " + err.Error())
@@ -308,7 +338,7 @@ func (as *AuthSession) UpdateSession() error {
 // func (as *AuthSession) Update(update bson.M) (error) {
 // 	saveAS := *as
 // 	//fmt.Printf("AuthSession.Update: 274 -- as: %s\n", spew.Sdump(as))
-// 	collection, _ := GetCollection("Sessions")
+// 	collection, _ := GetCollection("AuthSession")
 // 	//fmt.Printf("LIne 258\n")
 // 	filter := bson.M{"_id": as.ID}
 // 	//fmt.Printf("Filter: %v\n", filter)
@@ -432,7 +462,7 @@ func (as *AuthSession) UpdateSession() error {
 // 	update := bson.M{"$set": bson.M{"session_id": id}}
 // 	return as.Update(update)
 
-// 	// collection, _ := storage.GetCollection("sessions")
+// 	// collection, _ := storage.GetCollection("AuthSession")
 // 	// res, err := collection.UpdateOne(context.TODO(), filter, update)
 // 	// if err != nil {
 // 	// 	log.Errorf(" Update error %s", err)
