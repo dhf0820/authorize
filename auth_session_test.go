@@ -20,7 +20,7 @@ func TestCreateSessionForUser(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(jwt, ShouldNotBeNil)
 		So(payload, ShouldNotBeNil)
-		as, err := CreateSessionForUser(jwt)
+		as, err := CreateSessionForUser(jwt, "192.168.1.99")
 		So(err, ShouldBeNil)
 		So(as, ShouldNotBeNil)
 		payloadNew, err := VerifyToken(as.JWToken)

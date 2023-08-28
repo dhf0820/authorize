@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dhf0820/VsMongo v0.0.0-20230827031326-d5bf1fa13e3b
-	github.com/dhf0820/jwToken v0.0.0-20230827004344-57d282a5645b
+	github.com/dhf0820/jwToken v0.0.0-20230828001421-10bf92f5105f
 	github.com/dhf0820/vslog v0.0.0-20230827002704-012e6cd1e8bc
 	github.com/smartystreets/goconvey v1.8.1
 	go.mongodb.org/mongo-driver v1.12.1
@@ -24,7 +24,6 @@ require (
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/o1egl/paseto v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
-	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect

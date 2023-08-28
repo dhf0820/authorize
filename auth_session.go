@@ -71,6 +71,8 @@ type AuthSession struct {
 	LastAccessedAt *time.Time         `json:"lastAccessedAt" bson:"lastAccessedAt"`
 	// May not want to include this in what gets returned to the user on login
 	Connections []SessionConnection `json:"connections" bson:"connections"`
+	IP          string              `json:"ip" bson:"ip"`
+	SessionID   string              `json:"sessionID" bson:"sessionID"`
 }
 
 // type Status struct {
@@ -163,7 +165,14 @@ func (as *AuthSession) Create() error { // SessionID is provided
 	if !as.ID.IsZero() {
 		return log.Errorf("AuthSession with ID: " + as.ID.Hex() + " exists")
 	}
+	as.ID = primitive.NewObjectID()
+	payload, err := VerifyToken(as.JWToken)
 
+	if err != nil {
+		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
+	}
+	//as.JWToken = jwt
+	as.SessionID = as.ID.Hex()
 	// id, err := uuid.New()
 	// if err != nil {
 	// 	return fmt.Errorf("auth_session:95 -- Could not generate uuid: %s\n", err.Error())
@@ -197,7 +206,7 @@ func (as *AuthSession) Create() error { // SessionID is provided
 
 	//as.SessionID = id
 	//log.Infof("Creating Session: %s\n", spew.Sdump(as))
-	err = as.Insert()
+	err = as.Insert(payload)
 	if err != nil {
 		return log.Errorf("Insert Failed err: " + err.Error())
 	}
@@ -226,19 +235,26 @@ func (as *AuthSession) Create() error { // SessionID is provided
 // 	return nil
 // }
 
-func CreateSessionForUser(jwToken string) (*AuthSession, error) {
+func CreateSessionForUser(jwToken string, ip string) (*AuthSession, error) {
+
 	payload, err := VerifyToken(jwToken)
 	if err != nil {
 		return nil, log.Errorf("VerifyToken: " + err.Error())
 	}
 	log.Info("payload: " + spew.Sdump(payload))
-	filter := bson.M{"UserId": payload.UserId}
+	// tokenDuration, err := strconv.Atoi(os.Getenv("TOKEN_DURATION")) // In Minutes  default = 15
+	// if err != nil {
+	// 	log.Warn("TOKEN_DURATION not set defaulting: 60 min ")
+	// 	tokenDuration = 60
+	// }
+	// duration := time.Duration(tokenDuration) * time.Minute
 
 	collection, err := VsMongo.GetCollection("AuthSession")
 	if err != nil {
 		return nil, log.Errorf("GetCollection(AuthSession): " + err.Error())
 	}
 	as := &AuthSession{}
+	filter := bson.M{"UserId": payload.UserId}
 	err = collection.FindOne(context.TODO(), filter).Decode(as) // See if the user already has a session
 	if err == nil {                                             // The user has a session, keep using it
 		as.UpdateSession(payload) // Extend the current session
@@ -248,7 +264,10 @@ func CreateSessionForUser(jwToken string) (*AuthSession, error) {
 
 	as.UserName = payload.Username
 	as.FullName = payload.FullName
-	err = as.Insert()
+	as.IP = ip
+	as.JWToken = jwToken
+	as.UserID, err = primitive.ObjectIDFromHex(payload.UserId)
+	err = as.Insert(payload)
 	if err != nil {
 		msg := fmt.Sprintf("insert Session error: %s", err.Error())
 
@@ -303,7 +322,17 @@ func ValidateAuth(authId string) (*AuthSession, error) {
 	return &as, nil
 }
 
-func (as *AuthSession) Insert() error {
+func (as *AuthSession) Insert(payload *jw_token.Payload) error {
+	duration := os.Getenv("SESSION_LENGTH") + "m"
+	if as.ID.IsZero() {
+		as.ID = primitive.NewObjectID()
+	}
+	jwt, payload, err := CreateToken(as.IP, payload.Username, duration, payload.UserId, payload.FullName, payload.Role, as.ID.Hex())
+	if err != nil {
+		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
+	}
+	as.JWToken = jwt
+	as.SessionID = as.ID.Hex()
 	as.ExpiresAt = as.CalculateExpireTime()
 	tn := time.Now().UTC()
 	as.LastAccessedAt = &tn
@@ -318,11 +347,13 @@ func (as *AuthSession) Insert() error {
 }
 
 func (as *AuthSession) UpdateSession(payload *jw_token.Payload) error {
+	duration := os.Getenv("SESSION_LENGTH") + "m"
 	saveAs := *as
 	filter := bson.M{"_id": as.ID}
 	as.ExpiresAt = as.CalculateExpireTime()
 	tn := time.Now().UTC()
 	as.LastAccessedAt = &tn
+	jw_token.CreateJWToken(as.IP, payload.Username, duration, payload.UserId, payload.FullName, payload.Role, as.ID.Hex())
 	update := bson.M{"$set": bson.M{"expire_at": as.ExpiresAt, "accessed_at": as.LastAccessedAt}}
 
 	collection, err := VsMongo.GetCollection("AuthSession")
