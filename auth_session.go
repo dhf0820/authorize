@@ -243,14 +243,15 @@ func (as *AuthSession) Create(user *common.User) error { // SessionID is provide
 // }
 
 func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
-	log.Info("auth.CreateSessionForUser: " + user.UserName + " IP: " + ip)
+	log.Info("auth.CreateSessionForUser: " + user.UserName + " ID: " + user.ID.Hex() + " IP: " + ip)
 	collection, err := VsMongo.GetCollection("AuthSession")
 	if err != nil {
 		return nil, log.Errorf("GetCollection(AuthSession): " + err.Error())
 	}
 	as := &AuthSession{}
-	log.Info("INFO: creating AuthSession Filter")
 	filter := bson.M{"UserId": user.ID.Hex()}
+	log.Info("INFO: created AuthSession Filter: " + spew.Sdump(filter))
+
 	err = collection.FindOne(context.TODO(), filter).Decode(as) // See if the user already has a session
 	if err == nil {                                             // The user has a session, keep using it
 		as.UpdateSession(user) // Extend the current session
