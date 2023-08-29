@@ -263,6 +263,7 @@ func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 	as.IP = ip
 	// as.JWToken = jwToken
 	//as.UserID, err = primitive.ObjectIDFromHex(payload.UserId)
+	log.Info("INFO: Inserting AuthSession")
 	err = as.Insert(user)
 	if err != nil {
 		msg := fmt.Sprintf("insert Session error: %s", err.Error())
