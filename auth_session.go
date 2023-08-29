@@ -256,7 +256,7 @@ func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 		as.UpdateSession(user) // Extend the current session
 		return as, nil
 	}
-	log.Info("Created New auth.AuthSession: " + spew.Dump(as))
+	log.Info("Created New Auth.AuthSession: " + spew.Sdump(as))
 
 	// as.UserName = payload.Username
 	// as.FullName = payload.FullName
