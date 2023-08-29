@@ -242,7 +242,7 @@ func (as *AuthSession) Create(user *common.User) error { // SessionID is provide
 // }
 
 func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
-
+	log.Info("auth.CreateSessionForUser: " + user.UserName + " IP: " + ip)
 	collection, err := VsMongo.GetCollection("AuthSession")
 	if err != nil {
 		return nil, log.Errorf("GetCollection(AuthSession): " + err.Error())
