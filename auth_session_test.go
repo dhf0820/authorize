@@ -20,6 +20,8 @@ func TestCreateSessionForUser(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(jwt, ShouldNotBeNil)
 		So(payload, ShouldNotBeNil)
+
+		//TODO: Fix this test Get the test user.
 		as, err := CreateSessionForUser(jwt, "192.168.1.99")
 		So(err, ShouldBeNil)
 		So(as, ShouldNotBeNil)

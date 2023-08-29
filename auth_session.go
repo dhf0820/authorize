@@ -267,6 +267,7 @@ func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 
 		return nil, log.Errorf(msg)
 	}
+	log.Info("Created new Session: " + spew.Sdump(as))
 	return as, nil
 }
 
