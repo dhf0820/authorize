@@ -249,12 +249,13 @@ func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 		return nil, log.Errorf("GetCollection(AuthSession): " + err.Error())
 	}
 	as := &AuthSession{}
-	filter := bson.M{"UserId": user.ID.Hex()}
+	filter := bson.M{"UserID": user.ID}
 	log.Info("INFO: created AuthSession Filter: " + spew.Sdump(filter))
 
 	err = collection.FindOne(context.TODO(), filter).Decode(as) // See if the user already has a session
-	if err == nil {                                             // The user has a session, keep using it
-		as.UpdateSession(user) // Extend the current session
+	if err == nil {
+		log.Info("AuthSession  esist, update it") // The user has a session, keep using it
+		as.UpdateSession(user)                    // Extend the current session
 		return as, nil
 	}
 	log.Info("Created New Auth.AuthSession: " + spew.Sdump(as))
