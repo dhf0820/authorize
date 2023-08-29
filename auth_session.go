@@ -328,18 +328,25 @@ func ValidateAuth(authId string) (*AuthSession, error) {
 func (as *AuthSession) Insert(user *common.User) error {
 	duration := os.Getenv("SESSION_LENGTH") + "m"
 	if as.ID.IsZero() {
+		log.Info("as.ID is Zero")
 		as.ID = primitive.NewObjectID()
 	}
+	log.Info("inserting AuthSession: " + spew.Sdump(as))
 	jwt, payload, err := CreateToken(as.IP, user.UserName, duration, user.ID.Hex(), user.FullName, user.Role, as.ID.Hex())
 	if err != nil {
 		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
 	}
 	log.Info("jwt: " + jwt)
 	log.Info("payload: " + spew.Sdump(payload))
+	as.UserID = user.ID
+	as.UserName = user.UserName
+	as.FullName = user.FullName
+
 	as.JWToken = jwt
 	as.SessionID = as.ID.Hex()
 	as.ExpiresAt = as.CalculateExpireTime()
 	tn := time.Now().UTC()
+	as.CreatedAt = &tn
 	as.LastAccessedAt = &tn
 	collection, _ := VsMongo.GetCollection("AuthSession")
 	log.Info("Inserting AuthSession: " + spew.Sdump(as))
