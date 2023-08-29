@@ -249,7 +249,7 @@ func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 		return nil, log.Errorf("GetCollection(AuthSession): " + err.Error())
 	}
 	as := &AuthSession{}
-	filter := bson.M{"UserID": user.ID}
+	filter := bson.M{"user_id": user.ID}
 	log.Info("INFO: created AuthSession Filter: " + spew.Sdump(filter))
 
 	err = collection.FindOne(context.TODO(), filter).Decode(as) // See if the user already has a session
