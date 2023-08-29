@@ -5,7 +5,7 @@ go 1.20
 require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dhf0820/VsMongo v0.0.0-20230827031326-d5bf1fa13e3b
-	github.com/dhf0820/jwToken v0.0.0-20230828192245-cb03d3f79d1c
+	github.com/dhf0820/jwToken v0.0.0-20230828195820-ff88751f0e4c
 	github.com/dhf0820/vslog v0.0.0-20230827002704-012e6cd1e8bc
 	github.com/smartystreets/goconvey v1.8.1
 	go.mongodb.org/mongo-driver v1.12.1
@@ -16,14 +16,18 @@ require (
 	github.com/aead/chacha20poly1305 v0.0.0-20201124145622-1a5aba2a8b29 // indirect
 	github.com/aead/poly1305 v0.0.0-20180717145839-3fee0db0b635 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
+	github.com/dhf0820/fhir4 v0.0.0-20230622231015-fd9396d145c7 // indirect
+	github.com/dhf0820/uc_core v0.0.0-20230827203603-30f1b8aff110 // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect
+	github.com/gorilla/mux v1.8.0 // indirect
 	github.com/jtolds/gls v4.20.0+incompatible // indirect
 	github.com/klauspost/compress v1.13.6 // indirect
 	github.com/montanaflynn/stats v0.0.0-20171201202039-1bf9dbcd8cbe // indirect
 	github.com/o1egl/paseto v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/smarty/assertions v1.15.0 // indirect
 	github.com/xdg-go/pbkdf2 v1.0.0 // indirect
 	github.com/xdg-go/scram v1.1.2 // indirect
