@@ -17,6 +17,7 @@ import (
 	jw_token "github.com/dhf0820/jwToken"
 	"github.com/dhf0820/uc_core/common"
 	log "github.com/dhf0820/vslog"
+
 	//"github.com/google/uuid"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/dhf0820/VsMongo"
@@ -248,13 +249,14 @@ func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 		return nil, log.Errorf("GetCollection(AuthSession): " + err.Error())
 	}
 	as := &AuthSession{}
+	log.Info("INFO: creating AuthSession Filter")
 	filter := bson.M{"UserId": user.ID.Hex()}
 	err = collection.FindOne(context.TODO(), filter).Decode(as) // See if the user already has a session
 	if err == nil {                                             // The user has a session, keep using it
 		as.UpdateSession(user) // Extend the current session
 		return as, nil
 	}
-	// Create a new Session
+	log.Info("Created New auth.AuthSession: " + spew.Dump(as))
 
 	// as.UserName = payload.Username
 	// as.FullName = payload.FullName
