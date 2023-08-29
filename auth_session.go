@@ -330,16 +330,19 @@ func (as *AuthSession) Insert(user *common.User) error {
 	if as.ID.IsZero() {
 		as.ID = primitive.NewObjectID()
 	}
-	jwt, _, err := CreateToken(as.IP, user.UserName, duration, user.ID.Hex(), user.FullName, user.Role, as.ID.Hex())
+	jwt, payload, err := CreateToken(as.IP, user.UserName, duration, user.ID.Hex(), user.FullName, user.Role, as.ID.Hex())
 	if err != nil {
 		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
 	}
+	log.Info("jwt: " + jwt)
+	log.Info("payload: " + spew.Sdump(payload))
 	as.JWToken = jwt
 	as.SessionID = as.ID.Hex()
 	as.ExpiresAt = as.CalculateExpireTime()
 	tn := time.Now().UTC()
 	as.LastAccessedAt = &tn
 	collection, _ := VsMongo.GetCollection("AuthSession")
+	log.Info("Inserting AuthSession: " + spew.Sdump(as))
 	insertResult, err := collection.InsertOne(context.TODO(), as)
 	if err != nil {
 		return log.Errorf("InsertOne error: " + err.Error())
