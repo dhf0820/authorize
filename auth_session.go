@@ -52,6 +52,7 @@ type SessionConnection struct {
 	FacilityId primitive.ObjectID `json:"facilityId" bson:"facilityId"`
 	SystemId   primitive.ObjectID `json:"systemId" bson:"systemId"`
 	UserName   string             `json:"userName" bson:"userName"`
+	Fields     []*common.KVData   `json:"fields" bson:"fields"`
 	//Last X patients the user has selected
 	PatientHistory []PatientSummary `json:"patientHistory" bson:"patientHistory"`
 	Token          string           `json:"token" bson:"token"` //for this connection to Remote EMR from the connector
