@@ -17,7 +17,7 @@ require (
 	github.com/aead/poly1305 v0.0.0-20180717145839-3fee0db0b635 // indirect
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/dhf0820/fhir4 v0.0.0-20230622231015-fd9396d145c7 // indirect
-	github.com/dhf0820/uc_core v0.0.0-20230829013756-f44e8c86c3e8 // indirect
+	github.com/dhf0820/uc_core v0.0.0-20230829235559-d93cf5d6312b // indirect
 	github.com/golang/snappy v0.0.1 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/gopherjs/gopherjs v1.17.2 // indirect

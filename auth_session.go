@@ -357,7 +357,7 @@ func (as *AuthSession) Insert(user *common.User) error {
 		return log.Errorf("InsertOne error: " + err.Error())
 	}
 	as.ID = insertResult.InsertedID.(primitive.ObjectID)
-	log.Error("New ID: " + as.ID.Hex())
+	log.Info("New ID: " + as.ID.Hex())
 	return nil
 }
 
@@ -368,16 +368,20 @@ func (as *AuthSession) UpdateSession(user *common.User) error {
 	as.ExpiresAt = as.CalculateExpireTime()
 	tn := time.Now().UTC()
 	as.LastAccessedAt = &tn
+
 	jwt, _, err := jw_token.CreateJWToken(as.IP, as.UserName, duration, as.UserID.Hex(), as.FullName, user.Role, as.ID.Hex())
-	update := bson.M{"$set": bson.M{"expire_at": as.ExpiresAt, "accessed_at": as.LastAccessedAt,
-		as.JWToken: jwt}}
+	update := bson.M{"$set": bson.M{"expiresAt": as.ExpiresAt, "lastAccessedAt": as.LastAccessedAt,
+		"jwToken": jwt}}
 
 	collection, err := VsMongo.GetCollection("AuthSession")
+	if err != nil {
+		return log.Errorf("GetCollection(AuthSession): " + err.Error())
+	}
 	updResults, err := collection.UpdateOne(context.TODO(), filter, update)
 	log.Info("updResult: " + spew.Sdump(updResults))
 	if err != nil {
 		*as = saveAs
-		return errors.New("UpdateSession failed: " + err.Error())
+		return log.Errorf("UpdateSession failed: " + err.Error())
 	}
 	return nil
 }
