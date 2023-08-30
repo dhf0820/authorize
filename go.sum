@@ -32,6 +32,8 @@ github.com/dhf0820/uc_core v0.0.0-20230829234543-0f289776254f h1:P1PiNbm5d4dUIzW
 github.com/dhf0820/uc_core v0.0.0-20230829234543-0f289776254f/go.mod h1:6cIFueMQpW6SpHk3mqTZVEJ0uWvq5UshZkDqo+SviPk=
 github.com/dhf0820/uc_core v0.0.0-20230829235559-d93cf5d6312b h1:tuTodGZqh8PBAwVDxfxnibDKjl1TkiI+WJAIvSOIO78=
 github.com/dhf0820/uc_core v0.0.0-20230829235559-d93cf5d6312b/go.mod h1:6cIFueMQpW6SpHk3mqTZVEJ0uWvq5UshZkDqo+SviPk=
+github.com/dhf0820/uc_core v0.0.0-20230830010101-5cd6e8596e40 h1:Uin/2otLrux3bgs6lFDKXicTvDpf2DJI/775SMcN6qw=
+github.com/dhf0820/uc_core v0.0.0-20230830010101-5cd6e8596e40/go.mod h1:6cIFueMQpW6SpHk3mqTZVEJ0uWvq5UshZkDqo+SviPk=
 github.com/dhf0820/vslog v0.0.0-20230827002704-012e6cd1e8bc h1:YLrH3uFqAR28DXDs2He7+H1zfZRbTs83wonHxaXgXuU=
 github.com/dhf0820/vslog v0.0.0-20230827002704-012e6cd1e8bc/go.mod h1:blpTi2lVYBB7f49692KhhaPW6XIUP8zSl+AlihQiwmM=
 github.com/golang/snappy v0.0.1 h1:Qgr9rKW7uDUkrbSmQeiDsGa8SjGyCOGtuasMWwvp2P4=
