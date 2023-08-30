@@ -73,7 +73,7 @@ type AuthSession struct {
 	// May not want to include this in what gets returned to the user on login
 	Connections []SessionConnection `json:"connections" bson:"connections"`
 	IP          string              `json:"ip" bson:"ip"`
-	SessionID   string              `json:"sessionID" bson:"sessionID"`
+	//SessionID   string              `json:"sessionID" bson:"sessionID"`
 }
 
 // type Status struct {
@@ -179,7 +179,7 @@ func (as *AuthSession) Create(user *common.User) error { // SessionID is provide
 	as.ID = primitive.NewObjectID()
 
 	//as.JWToken = jwt
-	as.SessionID = as.ID.Hex()
+	//as.SessionID = as.ID.Hex()
 	// id, err := uuid.New()
 	// if err != nil {
 	// 	return fmt.Errorf("auth_session:95 -- Could not generate uuid: %s\n", err.Error())
@@ -345,7 +345,7 @@ func (as *AuthSession) Insert(user *common.User) error {
 	as.FullName = user.FullName
 
 	as.JWToken = jwt
-	as.SessionID = as.ID.Hex()
+
 	as.ExpiresAt = as.CalculateExpireTime()
 	tn := time.Now().UTC()
 	as.CreatedAt = &tn
