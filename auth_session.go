@@ -255,7 +255,7 @@ func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 
 	err = collection.FindOne(context.TODO(), filter).Decode(as) // See if the user already has a session
 	if err == nil {
-		log.Info("AuthSession  esist, update it") // The user has a session, keep using it
+		log.Info("AuthSession  exist, update it") // The user has a session, keep using it
 		as.UpdateSession(user)                    // Extend the current session
 		return as, nil
 	}
@@ -363,7 +363,7 @@ func (as *AuthSession) Insert(user *common.User) error {
 }
 
 func (as *AuthSession) UpdateSession(user *common.User) error {
-	duration := os.Getenv("SESSION_LENGTH") + "m"
+	duration := os.Getenv("SESSION_LENGTH")
 	saveAs := *as
 	filter := bson.M{"_id": as.ID}
 	as.ExpiresAt = as.CalculateExpireTime()

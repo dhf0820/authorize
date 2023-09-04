@@ -1,11 +1,13 @@
 package authorize
 
 import (
+	"context"
 	//"errors"
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
 	"github.com/dhf0820/VsMongo"
 	jw_token "github.com/dhf0820/jwToken"
+	common "github.com/dhf0820/uc_core/common"
 	log "github.com/dhf0820/vslog"
 	"os"
 	"testing"
@@ -20,9 +22,19 @@ func TestCreateSessionForUser(t *testing.T) {
 		So(err, ShouldBeNil)
 		So(jwt, ShouldNotBeNil)
 		So(payload, ShouldNotBeNil)
-
+		id, err := primitive.ObjectIDFromHex("62d0af5dec383ade03a96b7e")
+		So(err, ShouldBeNil)
+		So(id, ShouldNotEqual, primitive.NilObjectID)
+		filter := primitive.M{"_id": id}
+		collection, err := VsMongo.GetCollection("user")
+		So(err, ShouldBeNil)
+		So(collection, ShouldNotBeNil)
+		var usr *common.User
+		log.Info(fmt.Sprintf("Calling FindOne:%v", filter))
+		err = collection.FindOne(context.TODO(), filter).Decode(&usr)
+		So(err, ShouldBeNil)
 		//TODO: Fix this test Get the test user.
-		as, err := CreateSessionForUser(jwt, "192.168.1.99")
+		as, err := CreateSessionForUser(usr, "192.168.1.99")
 		So(err, ShouldBeNil)
 		So(as, ShouldNotBeNil)
 		payloadNew, err := VerifyToken(as.JWToken)
@@ -84,7 +96,18 @@ func TestCreateSession(t *testing.T) {
 		if err == nil {
 			log.Info("Deleted existing test AuthSession for UseId " + as.UserID.Hex())
 		}
-		err = as.Create()
+		id, err := primitive.ObjectIDFromHex("62d0af5dec383ade03a96b7e")
+		So(err, ShouldBeNil)
+		So(id, ShouldNotEqual, primitive.NilObjectID)
+		filter := primitive.M{"_id": id}
+		collection, err := VsMongo.GetCollection("user")
+		So(err, ShouldBeNil)
+		So(collection, ShouldNotBeNil)
+		var usr *common.User
+		log.Info(fmt.Sprintf("Calling FindOne:%v", filter))
+		err = collection.FindOne(context.TODO(), filter).Decode(&usr)
+		So(err, ShouldBeNil)
+		err = as.Create(usr)
 		So(err, ShouldBeNil)
 		s, err := ValidateAuth(string(as.ID.Hex()))
 		So(err, ShouldBeNil)
@@ -101,10 +124,13 @@ func TestValidateSessionForUserId(t *testing.T) {
 		os.Setenv("COMPANY", "test")
 		vsMongo := VsMongo.OpenDB("")
 		So(vsMongo, ShouldNotBeNil)
+		// id, err := primitive.ObjectIDFromHex("62d0af5dec383ade03a96b7e")
+		// So(err, ShouldBeNil)
+		// So(id, ShouldNotEqual, primitive.NilObjectID)
 		userId, err := primitive.ObjectIDFromHex("62f18efcba5395278cd530d5")
 		So(err, ShouldBeNil)
 		So(userId, ShouldNotEqual, primitive.NilObjectID)
-		as, err := ValidateSessionForUserID(userId)
+		as, err := ValidateSessionForUserID(&userId)
 		So(err, ShouldBeNil)
 		So(as, ShouldNotBeNil)
 	})
