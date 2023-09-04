@@ -256,7 +256,7 @@ func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 	err = collection.FindOne(context.TODO(), filter).Decode(as) // See if the user already has a session
 	if err == nil {
 		log.Info("AuthSession  exist, update it") // The user has a session, keep using it
-		as.UpdateSession(user)                    // Extend the current session
+		//as.UpdateSession(user)                    // Extend the current session
 		return as, nil
 	}
 	log.Info("Created New Auth.AuthSession: " + spew.Sdump(as))
