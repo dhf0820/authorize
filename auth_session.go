@@ -376,7 +376,7 @@ func (as *AuthSession) UpdateSession(user *common.User) error {
 	}
 	log.Info("jwt: " + jwt)
 	update := bson.M{"$set": bson.M{"expiresAt": as.ExpiresAt, "lastAccessedAt": as.LastAccessedAt,
-		"jwToken": as.JWToken}}
+		"jwToken": jwt}}
 
 	collection, err := VsMongo.GetCollection("AuthSession")
 	if err != nil {
