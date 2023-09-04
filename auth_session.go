@@ -371,8 +371,12 @@ func (as *AuthSession) UpdateSession(user *common.User) error {
 	as.LastAccessedAt = &tn
 
 	jwt, _, err := jw_token.CreateJWToken(as.IP, as.UserName, duration, as.UserID.Hex(), as.FullName, user.Role, as.ID.Hex())
+	if err != nil {
+		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
+	}
+	log.Info("jwt: " + jwt)
 	update := bson.M{"$set": bson.M{"expiresAt": as.ExpiresAt, "lastAccessedAt": as.LastAccessedAt,
-		"jwToken": jwt}}
+		"jwToken": as.JWToken}}
 
 	collection, err := VsMongo.GetCollection("AuthSession")
 	if err != nil {
@@ -384,6 +388,7 @@ func (as *AuthSession) UpdateSession(user *common.User) error {
 		*as = saveAs
 		return log.Errorf("UpdateSession failed: " + err.Error())
 	}
+	log.Info("Updated AuthSession: " + spew.Sdump(as))
 	return nil
 }
 
