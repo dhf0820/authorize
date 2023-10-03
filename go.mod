@@ -5,8 +5,8 @@ go 1.20
 require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dhf0820/VsMongo v0.0.0-20230827031326-d5bf1fa13e3b
-	github.com/dhf0820/jwToken v0.0.0-20230828195820-ff88751f0e4c
-	github.com/dhf0820/vslog v0.0.0-20230827002704-012e6cd1e8bc
+	github.com/dhf0820/jwToken v0.0.0-20231003181347-5ad4ed0fae06
+	github.com/dhf0820/vslog v0.0.0-20230915162210-6b57c819c640
 	github.com/smartystreets/goconvey v1.8.1
 	go.mongodb.org/mongo-driver v1.12.1
 )

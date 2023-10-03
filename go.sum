@@ -24,6 +24,8 @@ github.com/dhf0820/jwToken v0.0.0-20230828193836-cb90c3d2c816 h1:ADglhYaOZOok4Ld
 github.com/dhf0820/jwToken v0.0.0-20230828193836-cb90c3d2c816/go.mod h1:LLDVZVrEXOwzm2Egchobf72uZJSrrV4hvWqRIceIJ1M=
 github.com/dhf0820/jwToken v0.0.0-20230828195820-ff88751f0e4c h1:zlTg63Mut75F5Ss90KluOEmJkmlHY/Jfw5iRyFjFAdE=
 github.com/dhf0820/jwToken v0.0.0-20230828195820-ff88751f0e4c/go.mod h1:LLDVZVrEXOwzm2Egchobf72uZJSrrV4hvWqRIceIJ1M=
+github.com/dhf0820/jwToken v0.0.0-20231003181347-5ad4ed0fae06 h1:2V1JWDe7X11+MtErGZkhQuks3VcXf+RcN7ug6yQi33A=
+github.com/dhf0820/jwToken v0.0.0-20231003181347-5ad4ed0fae06/go.mod h1:rc67qRhBTF6epk6Ed+8eWl25Vy3ELXDzqZYcgd8b/rk=
 github.com/dhf0820/uc_core v0.0.0-20230827203603-30f1b8aff110 h1:P9Zl8Z5OBOqKDcpAIZmVgfvsGNfaSmVWlQNaue0k/2g=
 github.com/dhf0820/uc_core v0.0.0-20230827203603-30f1b8aff110/go.mod h1:9q6GiOtzu4rJJlCy4QRD9qthzVHdygVXbCpoaR3qSrQ=
 github.com/dhf0820/uc_core v0.0.0-20230829013756-f44e8c86c3e8 h1:q+3AO+cqSbPbAb4xkhwCIu0U62tTgow3i2FJJQqf2wI=
@@ -36,6 +38,8 @@ github.com/dhf0820/uc_core v0.0.0-20230830010101-5cd6e8596e40 h1:Uin/2otLrux3bgs
 github.com/dhf0820/uc_core v0.0.0-20230830010101-5cd6e8596e40/go.mod h1:6cIFueMQpW6SpHk3mqTZVEJ0uWvq5UshZkDqo+SviPk=
 github.com/dhf0820/vslog v0.0.0-20230827002704-012e6cd1e8bc h1:YLrH3uFqAR28DXDs2He7+H1zfZRbTs83wonHxaXgXuU=
 github.com/dhf0820/vslog v0.0.0-20230827002704-012e6cd1e8bc/go.mod h1:blpTi2lVYBB7f49692KhhaPW6XIUP8zSl+AlihQiwmM=
+github.com/dhf0820/vslog v0.0.0-20230915162210-6b57c819c640 h1:L8A8NbTixUkA52jCZ34SQALPQQDliCqkYxZijcwWN7c=
+github.com/dhf0820/vslog v0.0.0-20230915162210-6b57c819c640/go.mod h1:blpTi2lVYBB7f49692KhhaPW6XIUP8zSl+AlihQiwmM=
 github.com/golang/snappy v0.0.1 h1:Qgr9rKW7uDUkrbSmQeiDsGa8SjGyCOGtuasMWwvp2P4=
 github.com/golang/snappy v0.0.1/go.mod h1:/XxbfmMg8lxefKM7IXC3fBNl/7bRcc72aCRzEWrmP2Q=
 github.com/google/go-cmp v0.5.2/go.mod h1:v8dTdLbMG2kIc/vJvl+f65V22dbkXbowE6jgT/gNBxE=

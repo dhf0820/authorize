@@ -200,21 +200,21 @@ func (as *AuthSession) Create(user *common.User) error { // SessionID is provide
 	// if as == nil {
 	// 	log.Errorf("auth_session:76 -- as is nil returned from")
 	// }
-	sessionLengthStr := os.Getenv("SESSION_LENGTH")
-	sessionLength, err := strconv.Atoi(sessionLengthStr)
-	if err != nil {
-		return log.Errorf("Can not convert SESSION_LENGTH: [" + sessionLengthStr + "] to integer minutes")
-	}
+	// sessionLengthStr := os.Getenv("SESSION_LENGTH")
+	// sessionLength, err := strconv.Atoi(sessionLengthStr)
+	// if err != nil {
+	// 	return log.Errorf("Can not convert SESSION_LENGTH: [" + sessionLengthStr + "] to integer minutes")
+	// }
 	//as.UserID = userId
 	now := time.Now()
-	expires := now.Add(time.Duration(sessionLength) * time.Minute)
+	expires := now //.Add(time.Duration(sessionLength) * time.Minute)
 
 	as.CreatedAt = &now
 	as.ExpiresAt = &expires
 
 	//as.SessionID = id
 	//log.Infof("Creating Session: %s\n", spew.Sdump(as))
-	err = as.Insert(user)
+	err := as.Insert(user)
 	if err != nil {
 		return log.Errorf("Insert Failed err: " + err.Error())
 	}
@@ -243,6 +243,10 @@ func (as *AuthSession) Create(user *common.User) error { // SessionID is provide
 // 	return nil
 // }
 
+////////////////////////////////////CreateSessiopnForUser/////////////////////////////////////////////////////
+// CreateSessionForUser creates a new AuthSession for the user. It is called on every login to create a new //
+// session.  If the user already has a session, it is extended.                                             //
+
 func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 	log.Info("auth.CreateSessionForUser: " + user.UserName + " ID: " + user.ID.Hex() + " IP: " + ip)
 	collection, err := VsMongo.GetCollection("AuthSession")
@@ -256,10 +260,10 @@ func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 	err = collection.FindOne(context.TODO(), filter).Decode(as) // See if the user already has a session
 	if err == nil {
 		log.Info("AuthSession  exist, update it") // The user has a session, keep using it
-		//as.UpdateSession(user)                    // Extend the current session
+		as.UpdateSession(user)                    // Extend the current session
 		return as, nil
 	}
-	log.Info("Created New Auth.AuthSession: " + spew.Sdump(as))
+	log.Info("Create New Auth.AuthSession: " + spew.Sdump(as))
 
 	// as.UserName = payload.Username
 	// as.FullName = payload.FullName
@@ -328,6 +332,10 @@ func ValidateAuth(authId string) (*AuthSession, error) {
 	return &as, nil
 }
 
+// //////////////////////////////Insert AuthSession///////////////////////////////////////////////////////////
+// Insert AuthSession inserts a new AuthSession into the AuthSession collection, with initial jwt and      //
+// expire time. It is called on every login to create a new session.  See CreateSessionForUser             //
+// ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 func (as *AuthSession) Insert(user *common.User) error {
 	duration := os.Getenv("SESSION_LENGTH") + "m"
 	if as.ID.IsZero() {
@@ -339,15 +347,13 @@ func (as *AuthSession) Insert(user *common.User) error {
 	if err != nil {
 		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
 	}
-	log.Info("jwt: " + jwt)
-	log.Info("payload: " + spew.Sdump(payload))
+	log.Info("Inserted jwt: " + jwt)
+	log.Info("Inserted payload: " + spew.Sdump(payload))
 	as.UserID = user.ID
+	as.ExpiresAt = &payload.ExpiresAt
 	as.UserName = user.UserName
 	as.FullName = user.FullName
-
 	as.JWToken = jwt
-
-	as.ExpiresAt = as.CalculateExpireTime()
 	tn := time.Now().UTC()
 	as.CreatedAt = &tn
 	as.LastAccessedAt = &tn
@@ -362,19 +368,27 @@ func (as *AuthSession) Insert(user *common.User) error {
 	return nil
 }
 
+////////////////////////UpdateSession/////////////////////////////////////////////
+// UpdateSession updates the AuthSession with the new token and new expire time //
+// It is called on every call to Core to keep the session and token alive       //
+// It is also called when a new session is created or a Session is validated    //
+//////////////////////////////////////////////////////////////////////////////////
+
 func (as *AuthSession) UpdateSession(user *common.User) error {
 	duration := os.Getenv("SESSION_LENGTH")
 	saveAs := *as
 	filter := bson.M{"_id": as.ID}
-	as.ExpiresAt = as.CalculateExpireTime()
+	//as.ExpiresAt = as.CalculateExpireTime()
 	tn := time.Now().UTC()
 	as.LastAccessedAt = &tn
 
-	jwt, _, err := jw_token.CreateJWToken(as.IP, as.UserName, duration, as.UserID.Hex(), as.FullName, user.Role, as.ID.Hex())
+	jwt, payload, err := jw_token.CreateJWToken(as.IP, as.UserName, duration, as.UserID.Hex(), as.FullName, user.Role, as.ID.Hex())
 	if err != nil {
 		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
 	}
-	log.Info("jwt: " + jwt)
+	log.Info("UpdateSession jwt: " + jwt)
+	log.Info("UpdateSession payload: " + spew.Sdump(payload))
+	as.ExpiresAt = &payload.ExpiresAt
 	update := bson.M{"$set": bson.M{"expiresAt": as.ExpiresAt, "lastAccessedAt": as.LastAccessedAt,
 		"jwToken": jwt}}
 
@@ -529,12 +543,12 @@ func (as *AuthSession) UpdateSession(user *common.User) error {
 // 	//return nil
 // }
 
-func (as *AuthSession) CalculateExpireTime() *time.Time {
-	loc, _ := time.LoadLocation("UTC")
-	addlTime := time.Hour * 2
-	ExpireAt := time.Now().In(loc).Add(addlTime)
-	return &ExpireAt
-}
+// func (as *AuthSession) CalculateExpireTime() *time.Time {
+// 	loc, _ := time.LoadLocation("UTC")
+// 	addlTime := time.Hour * 2
+// 	ExpireAt := time.Now().In(loc).Add(addlTime)
+// 	return &ExpireAt
+// }
 
 // func (as *AuthSession) GetDocumentStatus() string {
 // 	latest, _ := GetSessionForUserID(as.UserID)
