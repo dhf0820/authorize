@@ -337,23 +337,26 @@ func ValidateAuth(authId string) (*AuthSession, error) {
 // expire time. It is called on every login to create a new session.  See CreateSessionForUser             //
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 func (as *AuthSession) Insert(user *common.User) error {
-	duration := os.Getenv("SESSION_LENGTH") + "m"
-	if as.ID.IsZero() {
-		log.Info("as.ID is Zero")
-		as.ID = primitive.NewObjectID()
-	}
+	// duration := os.Getenv("SESSION_LENGTH") + "m"
+	// if as.ID.IsZero() {
+	// 	log.Info("as.ID is Zero")
+	// 	as.ID = primitive.NewObjectID()
+	// }
 	log.Info("inserting AuthSession: " + spew.Sdump(as))
-	jwt, payload, err := CreateToken(as.IP, user.UserName, duration, user.ID.Hex(), user.FullName, user.Role, as.ID.Hex())
-	if err != nil {
-		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
-	}
-	log.Info("Inserted jwt: " + jwt)
-	log.Info("Inserted payload: " + spew.Sdump(payload))
+	// jwt, payload, err := CreateToken(as.IP, user.UserName, duration, user.ID.Hex(), user.FullName, user.Role, as.ID.Hex())
+	// if err != nil {
+	// 	return log.Errorf("Call to CreateJWToken failed: " + err.Error())
+	// }
+	// log.Info("Inserted jwt: " + jwt)
+	// log.Info("Inserted payload: " + spew.Sdump(payload))
+	//as.JWToken = jwt
+	// as.ExpiresAt = &payload.ExpiresAt
+	//as.CreatedAt = &payload.IssuedAt
 	as.UserID = user.ID
-	as.ExpiresAt = &payload.ExpiresAt
+	//as.ExpiresAt = &payload.ExpiresAt
 	as.UserName = user.UserName
 	as.FullName = user.FullName
-	as.JWToken = jwt
+
 	tn := time.Now().UTC()
 	as.CreatedAt = &tn
 	as.LastAccessedAt = &tn
@@ -387,10 +390,11 @@ func (as *AuthSession) UpdateSession(user *common.User) error {
 		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
 	}
 	log.Info("UpdateSession jwt: " + jwt)
+	as.JWToken = jwt
 	log.Info("UpdateSession payload: " + spew.Sdump(payload))
 	as.ExpiresAt = &payload.ExpiresAt
 	update := bson.M{"$set": bson.M{"expiresAt": as.ExpiresAt, "lastAccessedAt": as.LastAccessedAt,
-		"jwToken": jwt}}
+		"jwToken": as.JWToken}}
 
 	collection, err := VsMongo.GetCollection("AuthSession")
 	if err != nil {
@@ -402,6 +406,7 @@ func (as *AuthSession) UpdateSession(user *common.User) error {
 		*as = saveAs
 		return log.Errorf("UpdateSession failed: " + err.Error())
 	}
+
 	log.Info("Updated AuthSession: " + spew.Sdump(as))
 	return nil
 }
