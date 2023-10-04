@@ -389,7 +389,7 @@ func (as *AuthSession) UpdateSession(user *common.User) error {
 	if err != nil {
 		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
 	}
-	log.Info("UpdateSession jwt: " + jwt)
+	//log.Info("UpdateSession jwt: " + jwt)
 	as.JWToken = jwt
 	log.Info("UpdateSession payload: " + spew.Sdump(payload))
 	as.ExpiresAt = &payload.ExpiresAt
@@ -407,7 +407,7 @@ func (as *AuthSession) UpdateSession(user *common.User) error {
 		return log.Errorf("UpdateSession failed: " + err.Error())
 	}
 
-	log.Info("Updated AuthSession: " + spew.Sdump(as))
+	//log.Info("Updated AuthSession: " + spew.Sdump(as))
 	return nil
 }
 
