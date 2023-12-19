@@ -379,8 +379,8 @@ func (as *AuthSession) Insert(user *common.User) error {
 
 func (as *AuthSession) UpdateSession(user *common.User) error {
 	duration := os.Getenv("SESSION_LENGTH")
-	saveAs := *as
-	filter := bson.M{"_id": as.ID}
+	//saveAs := *as
+	//filter := bson.M{"_id": as.ID}
 	//as.ExpiresAt = as.CalculateExpireTime()
 	tn := time.Now().UTC()
 	as.LastAccessedAt = &tn
@@ -397,16 +397,16 @@ func (as *AuthSession) UpdateSession(user *common.User) error {
 	// update := bson.M{"$set": bson.M{"expiresAt": as.ExpiresAt, "lastAccessedAt": as.LastAccessedAt,
 	// 	"jwToken": as.JWToken}}
 
-	collection, err := VsMongo.GetCollection("AuthSession")
-	if err != nil {
-		return log.Errorf("GetCollection(AuthSession): " + err.Error())
-	}
-	updResults, err := collection.UpdateOne(context.TODO(), filter, update)
-	log.Info("updResult: " + spew.Sdump(updResults))
-	if err != nil {
-		*as = saveAs
-		return log.Errorf("UpdateSession failed: " + err.Error())
-	}
+	// collection, err := VsMongo.GetCollection("AuthSession")
+	// if err != nil {
+	// 	return log.Errorf("GetCollection(AuthSession): " + err.Error())
+	// }
+	// updResults, err := collection.UpdateOne(context.TODO(), filter, update)
+	// log.Info("updResult: " + spew.Sdump(updResults))
+	// if err != nil {
+	// 	*as = saveAs
+	// 	return log.Errorf("UpdateSession failed: " + err.Error())
+	// }
 
 	//log.Info("Updated AuthSession: " + spew.Sdump(as))
 	return nil
