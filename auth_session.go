@@ -14,7 +14,7 @@ import (
 	//"github.com/dgrijalva/jwt-go"
 	//uuid "github.com/aidarkhanov/nanoid/v2"
 	//"github.com/davecgh/go-spew/spew"
-	jw_token "github.com/dhf0820/jwToken"
+	jwToken "github.com/dhf0820/jwToken"
 	"github.com/dhf0820/uc_core/common"
 	log "github.com/dhf0820/vslog"
 
@@ -384,17 +384,18 @@ func (as *AuthSession) UpdateSession(user *common.User) error {
 	//as.ExpiresAt = as.CalculateExpireTime()
 	tn := time.Now().UTC()
 	as.LastAccessedAt = &tn
-
-	jwt, payload, err := jw_token.CreateJWToken(as.IP, as.UserName, duration, as.UserID.Hex(), as.FullName, user.Role, as.ID.Hex())
+	os.Setenv("TOKEN_DURATION", duration)
+	jwToken, payload, err := jwToken.CreateJWToken(as.IP, as.UserName, as.UserID.Hex(), as.FullName, user.Role, as.ID.Hex())
 	if err != nil {
 		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
 	}
-	//log.Info("UpdateSession jwt: " + jwt)
-	as.JWToken = jwt
+	as.JWToken = jwToken
 	log.Info("UpdateSession payload: " + spew.Sdump(payload))
-	as.ExpiresAt = &payload.ExpiresAt
-	update := bson.M{"$set": bson.M{"expiresAt": as.ExpiresAt, "lastAccessedAt": as.LastAccessedAt,
-		"jwToken": as.JWToken}}
+
+	//TODO: Make the JwToke can update expire time
+	//as.ExpiresAt = &payload.ExpiresAt
+	// update := bson.M{"$set": bson.M{"expiresAt": as.ExpiresAt, "lastAccessedAt": as.LastAccessedAt,
+	// 	"jwToken": as.JWToken}}
 
 	collection, err := VsMongo.GetCollection("AuthSession")
 	if err != nil {

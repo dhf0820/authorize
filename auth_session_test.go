@@ -18,7 +18,7 @@ import (
 
 func TestCreateSessionForUser(t *testing.T) {
 	Convey("CreateSessionForUser", t, func() {
-		jwt, payload, err := jw_token.CreateTestJWToken("30s")
+		jwt, payload, err := jw_token.CreateTestJWToken("10s")
 		So(err, ShouldBeNil)
 		So(jwt, ShouldNotBeNil)
 		So(payload, ShouldNotBeNil)
