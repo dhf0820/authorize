@@ -301,6 +301,11 @@ func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 		return nil, log.Errorf(msg)
 	}
 	log.Info("Created new Session: " + spew.Sdump(as))
+	pl, err := VerifyToken(as.JWToken)
+	if err != nil {
+		return nil, log.Errorf("VerifyToken: " + err.Error())
+	}
+	log.Debug3("Payload: " + spew.Sdump(pl))
 	return as, nil
 }
 

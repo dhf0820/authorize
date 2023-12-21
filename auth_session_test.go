@@ -55,6 +55,10 @@ func CreateTestToken(duration string) (string, *jwt.UcPayload, error) {
 
 	log.Debug3("Token: " + token)
 	log.Debug3("Payload: " + spew.Sdump(payload))
+	pl, err := VerifyToken(token)
+	So(err, ShouldBeNil)
+	So(pl, ShouldNotBeNil)
+	log.Debug3("pl: " + spew.Sdump(pl))
 	return token, payload, nil
 }
 func TestCreateSessionForUser(t *testing.T) {
@@ -67,6 +71,7 @@ func TestCreateSessionForUser(t *testing.T) {
 		So(jwt, ShouldNotBeNil)
 		So(payload, ShouldNotBeNil)
 		log.Info("jwt: " + jwt)
+
 		log.Info("payload: " + spew.Sdump(payload))
 		id, err := primitive.ObjectIDFromHex("62f18efcba5395278cd530d5") //Find User Dr Harman
 		So(err, ShouldBeNil)
