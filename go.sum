@@ -30,6 +30,8 @@ github.com/dhf0820/golangJWT v0.0.0-20231221022623-db7c09431577 h1:V/YhDs2azE4ss
 github.com/dhf0820/golangJWT v0.0.0-20231221022623-db7c09431577/go.mod h1:mKBhDjnEX6LDd+4dUmEz9EEBXubZsBcEgj4YPHyKOk4=
 github.com/dhf0820/golangJWT v0.0.0-20231221030152-e14de5a1ea94 h1:pKuVAc44Z9aLHRsFJ83VvidrnkA3Y3oxF6nVgLfj2no=
 github.com/dhf0820/golangJWT v0.0.0-20231221030152-e14de5a1ea94/go.mod h1:mKBhDjnEX6LDd+4dUmEz9EEBXubZsBcEgj4YPHyKOk4=
+github.com/dhf0820/golangJWT v0.0.0-20231221033128-43d04af66307 h1:Blzldr7jcvwdS6ArU038WjK6NRqY64fD0ubeocoDZvI=
+github.com/dhf0820/golangJWT v0.0.0-20231221033128-43d04af66307/go.mod h1:mKBhDjnEX6LDd+4dUmEz9EEBXubZsBcEgj4YPHyKOk4=
 github.com/dhf0820/jwToken v0.0.0-20231218001245-98f5405eb51c h1:OuMa0yHZqjttSTxI0FLNyLUF3uNuVmnIWW29CVMb6Zs=
 github.com/dhf0820/jwToken v0.0.0-20231218001245-98f5405eb51c/go.mod h1:dQIgqsz1B6jCtXkXyhrXtAwnzLcJowSaNhCl1VBkrlk=
 github.com/dhf0820/jwToken v0.0.0-20231218224326-ef9938b078f3 h1:6h+2Rb48FevUBnjId0JBBVmhwwzzQocA2tzec7KG9nY=
