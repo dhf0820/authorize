@@ -265,19 +265,19 @@ func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 		return as, nil
 	}
 	as.ID = primitive.NewObjectID()
-	log.Info("Calling CreateToken")
+	log.Info("auth-Calling CreateToken")
 	token, payload, err := jwt.CreateToken(ip, user.UserName, user.ID.Hex(), user.FullName, user.Role, as.ID.Hex())
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
 	if token == "" {
-		err = log.Errorf("Token is blank")
+		err = log.Errorf("auth-Token is blank")
 		log.Error(err.Error())
 		return nil, err
 	}
 	if payload == nil {
-		err = log.Errorf("Payload is nil")
+		err = log.Errorf("auth-Payload is nil")
 		log.Error(err.Error())
 		return nil, err
 	}
