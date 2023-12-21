@@ -5,7 +5,7 @@ go 1.21.1
 require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/dhf0820/VsMongo v0.0.0-20230827031326-d5bf1fa13e3b
-	github.com/dhf0820/golangJWT v0.0.0-20231221020243-f64161309cbe
+	github.com/dhf0820/golangJWT v0.0.0-20231221020731-6de070dda1d4
 	github.com/dhf0820/jwToken v0.0.0-20231218224326-ef9938b078f3
 	github.com/dhf0820/uc_core v0.0.0-20230830010101-5cd6e8596e40
 	github.com/dhf0820/vslog v0.0.0-20231007220019-758899f13b4a
