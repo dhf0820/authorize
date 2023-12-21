@@ -25,12 +25,12 @@ type LoginRequest struct {
 
 func TestLogin(t *testing.T) {
 	log.SetDebuglevel("DEBUG3")
-	godotenv.Load("./.env.uc_core_test")
+	godotenv.Load("./.env.authorize_test")
 	// _, err := InitCore("uc_core", "test", "test")
 	// if err != nil {
 	// 	t.Fatalf("InitCore failed: %s", err.Error())
 	// }
-	Convey("Subject: GetPatient returns the user information", t, func() {
+	Convey("Subject: Login returns the user information", t, func() {
 		pwReq := LoginRequest{}
 		pwReq.UserName = "dhfrench@vertisoft.com"
 		pwReq.Password = "password"

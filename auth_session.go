@@ -14,7 +14,7 @@ import (
 	//"github.com/dgrijalva/jwt-go"
 	//uuid "github.com/aidarkhanov/nanoid/v2"
 	//"github.com/davecgh/go-spew/spew"
-	jwToken "github.com/dhf0820/jwToken"
+	jwt "github.com/dhf0820/golangJWT"
 	"github.com/dhf0820/uc_core/common"
 	log "github.com/dhf0820/vslog"
 
@@ -263,6 +263,28 @@ func CreateSessionForUser(user *common.User, ip string) (*AuthSession, error) {
 		as.UpdateSession(user)                    // Extend the current session
 		return as, nil
 	}
+	as.ID = primitive.NewObjectID()
+	log.Info("Calling CreateToken")
+	token, payload, err := jwt.CreateToken(ip, user.UserName, user.ID.Hex(), user.FullName, user.Role, as.ID.Hex())
+	if err != nil {
+		log.Error(err.Error())
+		return nil, err
+	}
+	if token == "" {
+		err = log.Errorf("Token is blank")
+		log.Error(err.Error())
+		return nil, err
+	}
+	if payload == nil {
+		err = log.Errorf("Payload is nil")
+		log.Error(err.Error())
+		return nil, err
+	}
+	as.FullName = payload.FullName
+	as.UserID, err = primitive.ObjectIDFromHex(payload.UserId)
+	if err != nil {
+		return nil, log.Errorf("Payload.UserId is invalid")
+	}
 	log.Info("Create New Auth.AuthSession: " + spew.Sdump(as))
 
 	// as.UserName = payload.Username
@@ -337,29 +359,32 @@ func ValidateAuth(authId string) (*AuthSession, error) {
 // expire time. It is called on every login to create a new session.  See CreateSessionForUser             //
 // ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 func (as *AuthSession) Insert(user *common.User) error {
-	// duration := os.Getenv("SESSION_LENGTH") + "m"
-	// if as.ID.IsZero() {
-	// 	log.Info("as.ID is Zero")
-	// 	as.ID = primitive.NewObjectID()
-	// }
+	codedDuration := os.Getenv("TOKEN_DURATION") // + "m"
+	if codedDuration == "" {
+		codedDuration = "60m"
+	}
+	duration, err := time.ParseDuration(codedDuration)
+	if as.ID.IsZero() {
+		log.Info("as.ID is Zero")
+		as.ID = primitive.NewObjectID()
+	}
 	log.Info("inserting AuthSession: " + spew.Sdump(as))
-	// jwt, payload, err := CreateToken(as.IP, user.UserName, duration, user.ID.Hex(), user.FullName, user.Role, as.ID.Hex())
-	// if err != nil {
-	// 	return log.Errorf("Call to CreateJWToken failed: " + err.Error())
-	// }
-	// log.Info("Inserted jwt: " + jwt)
-	// log.Info("Inserted payload: " + spew.Sdump(payload))
-	//as.JWToken = jwt
-	// as.ExpiresAt = &payload.ExpiresAt
-	//as.CreatedAt = &payload.IssuedAt
+	jwt, payload, err := CreateToken(as.IP, user.UserName, user.ID.Hex(), user.FullName, user.Role, as.ID.Hex())
+	if err != nil {
+		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
+	}
+	log.Info("Inserted jwt: " + jwt)
+	log.Info("Inserted payload: " + spew.Sdump(payload))
+	as.JWToken = jwt
+	issuedAt := time.Now().UTC()
+	expiresAt := issuedAt.Add(duration)
+	as.ExpiresAt = &expiresAt
+	as.CreatedAt = &issuedAt
+	as.LastAccessedAt = &issuedAt
 	as.UserID = user.ID
-	//as.ExpiresAt = &payload.ExpiresAt
 	as.UserName = user.UserName
 	as.FullName = user.FullName
-
-	tn := time.Now().UTC()
-	as.CreatedAt = &tn
-	as.LastAccessedAt = &tn
+	as.LastAccessedAt = &issuedAt
 	collection, _ := VsMongo.GetCollection("AuthSession")
 	log.Info("Inserting AuthSession: " + spew.Sdump(as))
 	insertResult, err := collection.InsertOne(context.TODO(), as)
@@ -378,14 +403,19 @@ func (as *AuthSession) Insert(user *common.User) error {
 //////////////////////////////////////////////////////////////////////////////////
 
 func (as *AuthSession) UpdateSession(user *common.User) error {
-	duration := os.Getenv("SESSION_LENGTH")
-	//saveAs := *as
-	//filter := bson.M{"_id": as.ID}
-	//as.ExpiresAt = as.CalculateExpireTime()
-	tn := time.Now().UTC()
-	as.LastAccessedAt = &tn
-	os.Setenv("TOKEN_DURATION", duration)
-	jwToken, payload, err := jwToken.CreateJWToken(as.IP, as.UserName, as.UserID.Hex(), as.FullName, user.Role, as.ID.Hex())
+	saveAs := *as
+	codedDuration := os.Getenv("TOKEN_DURATION") // + "m"
+	if codedDuration == "" {
+		codedDuration = "60m"
+	}
+	duration, err := time.ParseDuration(codedDuration)
+	filter := bson.M{"_id": as.ID}
+	issuedAt := time.Now().UTC()
+	expiresAt := issuedAt.Add(duration)
+	as.ExpiresAt = &expiresAt
+	as.CreatedAt = &issuedAt
+	as.LastAccessedAt = &issuedAt
+	jwToken, payload, err := jwt.CreateToken(as.IP, as.UserName, as.UserID.Hex(), as.FullName, user.Role, as.ID.Hex())
 	if err != nil {
 		return log.Errorf("Call to CreateJWToken failed: " + err.Error())
 	}
@@ -394,21 +424,19 @@ func (as *AuthSession) UpdateSession(user *common.User) error {
 
 	//TODO: Make the JwToke can update expire time
 	//as.ExpiresAt = &payload.ExpiresAt
-	// update := bson.M{"$set": bson.M{"expiresAt": as.ExpiresAt, "lastAccessedAt": as.LastAccessedAt,
-	// 	"jwToken": as.JWToken}}
+	update := bson.M{"$set": bson.M{"expiresAt": as.ExpiresAt, "lastAccessedAt": as.LastAccessedAt, "jwToken": as.JWToken}}
+	collection, err := VsMongo.GetCollection("AuthSession")
+	if err != nil {
+		return log.Errorf("GetCollection(AuthSession): " + err.Error())
+	}
+	updResults, err := collection.UpdateOne(context.TODO(), filter, update)
+	log.Info("updResult: " + spew.Sdump(updResults))
+	if err != nil {
+		*as = saveAs
+		return log.Errorf("UpdateSession failed: " + err.Error())
+	}
 
-	// collection, err := VsMongo.GetCollection("AuthSession")
-	// if err != nil {
-	// 	return log.Errorf("GetCollection(AuthSession): " + err.Error())
-	// }
-	// updResults, err := collection.UpdateOne(context.TODO(), filter, update)
-	// log.Info("updResult: " + spew.Sdump(updResults))
-	// if err != nil {
-	// 	*as = saveAs
-	// 	return log.Errorf("UpdateSession failed: " + err.Error())
-	// }
-
-	//log.Info("Updated AuthSession: " + spew.Sdump(as))
+	//log.Debug3("Updated AuthSession: " + spew.Sdump(as))
 	return nil
 }
 
