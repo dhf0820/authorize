@@ -134,11 +134,12 @@ func (as *AuthSession) UpdateTimes() error {
 		return log.Errorf("Session Expired")
 	}
 	sessionLengthStr := os.Getenv("SESSION_LENGTH")
-	sessionLength, err := strconv.Atoi(sessionLengthStr)
+	duration, err := time.ParseDuration(sessionLengthStr)
+	//sessionLength, err := strconv.Atoi(sessionLengthStr)
 	if err != nil {
 		return log.Errorf(fmt.Sprintf("Can not convert SESSION_LENGTH: [%s] to integer minutes", sessionLengthStr))
 	}
-	expires := tnow.Add(time.Duration(sessionLength) * time.Minute)
+	expires := tnow.Add(time.Duration(duration))
 	as.ExpiresAt = &expires
 	return nil
 }

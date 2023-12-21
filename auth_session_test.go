@@ -205,7 +205,7 @@ func TestCreateSession(t *testing.T) {
 	log.SetDebuglevel("DEBUG3")
 	godotenv.Load("./.env.authorize_test")
 	Convey("Create AuthSession", t, func() {
-		os.Setenv("SESSION_LENGTH", "60")
+		os.Setenv("SESSION_LENGTH", "60m")
 		os.Setenv("CORE_DB", "mongodb+srv://dhfadmin:Sacj0nhati@cluster1.24b12.mongodb.net/test?retryWrites=true&w=majority")
 		os.Setenv("COMPANY", "test")
 
