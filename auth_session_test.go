@@ -73,7 +73,7 @@ func TestCreateSessionForUser(t *testing.T) {
 		log.Info("jwt: " + jwt)
 
 		log.Info("payload: " + spew.Sdump(payload))
-		id, err := primitive.ObjectIDFromHex("62f18efcba5395278cd530d5") //Find User Dr Harman
+		id, err := primitive.ObjectIDFromHex("65833bd42fefe64f96ac3b2a") //62f18efcba5395278cd530d5") //Find User Dr Harman
 		So(err, ShouldBeNil)
 		So(id, ShouldNotEqual, primitive.NilObjectID)
 		filter := primitive.M{"_id": id}
